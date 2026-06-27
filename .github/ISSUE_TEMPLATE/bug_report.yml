@@ -1,0 +1,27 @@
+name: Bug report
+description: Something isn't working
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Include a minimal code snippet that reproduces the issue.
+      render: javascript
+  - type: input
+    id: version
+    attributes:
+      label: reins version
+      placeholder: 0.1.0
+  - type: input
+    id: env
+    attributes:
+      label: Runtime / OS
+      placeholder: Node 22, Bun 1.1, Deno 2, macOS 15
