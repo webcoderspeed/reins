@@ -1,5 +1,5 @@
 import { expectType, expectError, expectAssignable } from 'tsd';
-import { withScope, createScope, retry, sleep, withTimeout, isCancellation } from '../dist/index.js';
+import { withScope, createScope, retry, race, sleep, withTimeout, isCancellation } from '../dist/index.js';
 import type { WithScopeOptions } from '../dist/index.js';
 import { runInWorker } from '../dist/worker.js';
 
@@ -30,6 +30,11 @@ expectType<Promise<void>>(createScope().dispose());
 expectType<Promise<number>>(retry(async () => 1));
 expectType<Promise<string>>(retry(() => 'x', { attempts: 5, delay: 10, jitter: true }));
 expectError(retry(async () => 1, { attempts: 'three' }));
+
+// race infers the common task result type
+expectType<Promise<number>>(race([async () => 1, () => 2]));
+expectType<Promise<string>>(race([() => 'a'], { timeout: 100 }));
+expectError(race([() => 1], { timeout: '5s' }));
 
 // helpers
 expectType<Promise<void>>(sleep(10));

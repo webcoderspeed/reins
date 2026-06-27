@@ -48,7 +48,7 @@ Zero runtime dependencies. ESM + CJS + types. **~1.2 kB** brotlied (tree-shaken 
 ```ts
 import {
   withScope, createScope,           // scopes
-  sleep, withTimeout, retry,        // helpers
+  sleep, withTimeout, retry, race,  // helpers
   CancellationError, TimeoutError, isCancellation, // errors
 } from "reinsjs";
 ```
@@ -143,6 +143,23 @@ const data = await withScope((scope) =>
   }),
 );
 ```
+
+### `race(tasks, options?)`
+
+Run tasks concurrently and resolve with the **first one to succeed**, cancelling the rest. Unlike `Promise.race` (which settles on the first task to *finish* — including a failure), `race` ignores individual rejections: a failing task drops out and the race continues. Only if **every** task fails does it reject, with an `AggregateError`. The losers are aborted the moment a winner appears, and `race` waits for them to unwind before resolving.
+
+```ts
+// Fastest mirror wins; the slower request is cancelled. A 5s deadline applies.
+const data = await race(
+  [
+    (signal) => fetch(mirrorA, { signal }).then((r) => r.json()),
+    (signal) => fetch(mirrorB, { signal }).then((r) => r.json()),
+  ],
+  { timeout: 5000 },
+);
+```
+
+This is the natural complement to `spawnAll`/`Promise.all` ("all must succeed") — `race` is "first success wins."
 
 ### `CancellationError` / `TimeoutError` / `isCancellation(err)`
 

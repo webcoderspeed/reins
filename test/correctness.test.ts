@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { getEventListeners } from 'node:events';
+import { getEventListeners, setMaxListeners } from 'node:events';
 import { withScope, sleep, isCancellation } from '../src/index.js';
 
 test('sleep removes its abort listener after resolving (no leak)', async () => {
@@ -14,6 +14,9 @@ test('sleep removes its abort listener after resolving (no leak)', async () => {
 
 test('concurrent sleeps on a shared signal release all listeners on settle', async () => {
   const controller = new AbortController();
+  // This test intentionally fans 30 sleeps onto one user-owned signal; raise the
+  // cap so Node doesn't warn (reins only lifts the cap on its own scope signals).
+  setMaxListeners(0, controller.signal);
   await Promise.all(Array.from({ length: 30 }, () => sleep(2, controller.signal)));
   assert.equal(getEventListeners(controller.signal, 'abort').length, 0);
 });
