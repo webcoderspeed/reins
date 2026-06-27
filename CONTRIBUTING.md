@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in reins.
+Thanks for your interest in reinsjs.
 
 ## Development
 

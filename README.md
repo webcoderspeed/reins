@@ -1,16 +1,16 @@
-# reins
+# reinsjs
 
 > **Rein in your async.** Structured concurrency and cancellation for JavaScript & TypeScript — scoped tasks, automatic cancellation, timeouts. No DSL, no generators. Just `async`/`await`.
 
 [![CI](https://github.com/webcoderspeed/reins/actions/workflows/ci.yml/badge.svg)](https://github.com/webcoderspeed/reins/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/reins.svg)](https://www.npmjs.com/package/reins)
+[![npm](https://img.shields.io/npm/v/reinsjs.svg)](https://www.npmjs.com/package/reinsjs)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![zero deps](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](./package.json)
 
 When one task fails, the rest auto-cancel. No `AbortController` plumbing. Six lines:
 
 ```ts
-import { withScope } from "reins";
+import { withScope } from "reinsjs";
 
 const [user, orders, prefs] = await withScope(async (scope) => {
   const user   = scope.spawn((signal) => fetch(`/u/${id}`, { signal }).then(r => r.json()));
@@ -33,12 +33,12 @@ JavaScript has no first-class way to manage the **lifetime** of concurrent async
 - **Orphaned tasks are a standard bug class** — fire off `doThing()` without awaiting and it keeps running after its caller returned: racing, double-writing, throwing into the void.
 - **Errors get lost** — an unawaited rejection becomes an `unhandledRejection`, or silently vanishes.
 
-`reins` gives you a **scope** (a.k.a. a nursery) that *owns* the tasks started inside it. When the scope exits, every task it started is guaranteed finished or cancelled. Think **Go's `context` + Python Trio's nurseries + Kotlin's `coroutineScope`**, but native-feeling in JS.
+`reinsjs` gives you a **scope** (a.k.a. a nursery) that *owns* the tasks started inside it. When the scope exits, every task it started is guaranteed finished or cancelled. Think **Go's `context` + Python Trio's nurseries + Kotlin's `coroutineScope`**, but native-feeling in JS.
 
 ## Install
 
 ```bash
-npm install reins
+npm install reinsjs
 ```
 
 Zero runtime dependencies. ESM + CJS + types. Node ≥ 18, Bun, Deno, browsers.
@@ -46,7 +46,7 @@ Zero runtime dependencies. ESM + CJS + types. Node ≥ 18, Bun, Deno, browsers.
 ## The whole API (five exports)
 
 ```ts
-import { withScope, sleep, withTimeout, CancellationError, TimeoutError, isCancellation } from "reins";
+import { withScope, sleep, withTimeout, CancellationError, TimeoutError, isCancellation } from "reinsjs";
 ```
 
 ### `withScope(body, options?)`
@@ -114,7 +114,7 @@ try {
 
 ## ⚠️ Cooperative cancellation (read this)
 
-JavaScript **cannot forcibly kill a running async function** — there are no green threads to interrupt. `reins` cancels by aborting an `AbortSignal`. A task unwinds promptly **only if it forwards that signal** to the things it awaits (`fetch`, `sleep`, DB drivers, child scopes) or checks `signal.aborted` itself.
+JavaScript **cannot forcibly kill a running async function** — there are no green threads to interrupt. `reinsjs` cancels by aborting an `AbortSignal`. A task unwinds promptly **only if it forwards that signal** to the things it awaits (`fetch`, `sleep`, DB drivers, child scopes) or checks `signal.aborted` itself.
 
 ```ts
 // ✅ Cancels promptly — forwards the signal
@@ -126,7 +126,7 @@ scope.spawn(() => fetch(url));        // no signal passed
 scope.spawn(() => heavyCpuLoop());    // never yields, never checks
 ```
 
-Because of join-on-exit, an uncooperative task **delays** the scope's teardown until it finishes on its own. This is a JavaScript limitation, not a `reins` bug — we surface it loudly so there are no surprises.
+Because of join-on-exit, an uncooperative task **delays** the scope's teardown until it finishes on its own. This is a JavaScript limitation, not a `reinsjs` bug — we surface it loudly so there are no surprises.
 
 ## Recipes
 
@@ -167,14 +167,14 @@ npx tsx examples/fanout.ts --fail   # one fails → the others auto-cancel
 
 ## How it compares
 
-| Option | What it is | Why reins instead |
+| Option | What it is | Why reinsjs instead |
 |--------|-----------|-------------------|
-| **[Effect](https://effect.website)** | Full effect-system / runtime with fibers | Real structured concurrency, but you adopt a heavy embedded DSL and rewrite into it. `reins` is a single primitive you drop into plain `async`/`await`. |
-| **[Effection](https://frontside.com/effection)** | Structured concurrency via generators | Works, but forces `function*` / `yield*`. `reins` stays in `async`/`await`. |
-| **raw `AbortController`** | The platform primitive | Gives you the pieces but no scope or lifetime management — you still thread signals and join children by hand. `reins` *is* the missing scope. |
+| **[Effect](https://effect.website)** | Full effect-system / runtime with fibers | Real structured concurrency, but you adopt a heavy embedded DSL and rewrite into it. `reinsjs` is a single primitive you drop into plain `async`/`await`. |
+| **[Effection](https://frontside.com/effection)** | Structured concurrency via generators | Works, but forces `function*` / `yield*`. `reinsjs` stays in `async`/`await`. |
+| **raw `AbortController`** | The platform primitive | Gives you the pieces but no scope or lifetime management — you still thread signals and join children by hand. `reinsjs` *is* the missing scope. |
 | **`p-limit` / `p-map` / `p-queue`** | Concurrency limiters | Solve *how many at once*, not *who owns these tasks and when do they end*. Different problem. |
 
-`reins` is the lightweight, `async`/`await`-native primitive in the gap between "raw AbortSignal" and "adopt Effect."
+`reinsjs` is the lightweight, `async`/`await`-native primitive in the gap between "raw AbortSignal" and "adopt Effect."
 
 ## License
 
