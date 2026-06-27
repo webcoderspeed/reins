@@ -17,7 +17,11 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          release-type: node
+          # Manifest mode: honour release-please-config.json (incl. the
+          # pre-1.0 bump rules). Do NOT also pass `release-type` here — that
+          # switches to simple mode and ignores the config file.
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
   publish:
     needs: release-please
