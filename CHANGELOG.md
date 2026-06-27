@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/webcoderspeed/reins/compare/reinsjs-v0.2.0...reinsjs-v0.3.0) (2026-06-27)
+
+
+### Features
+
+* add race() — first task to succeed wins, losers cancelled ([437517e](https://github.com/webcoderspeed/reins/commit/437517e27148fd42f598f9fde2b6db8b34243957))
+
 ## [0.2.0](https://github.com/webcoderspeed/reins/compare/reinsjs-v0.1.0...reinsjs-v0.2.0) (2026-06-27)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "reinsjs",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Rein in your async. Structured concurrency and cancellation for JavaScript & TypeScript — scoped tasks, automatic cancellation, timeouts. No DSL, no generators. Just async/await.",
   "type": "module",
   "main": "./dist/index.cjs",
