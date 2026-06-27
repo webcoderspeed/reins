@@ -1,0 +1,11 @@
+{
+  "name": "@webcoderspeed/reins",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./worker": "./src/worker.ts"
+  },
+  "publish": {
+    "include": ["src", "README.md", "LICENSE", "jsr.json"]
+  }
+}
