@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     branches: [master]
+  workflow_dispatch: # allow manually re-running the publish if a release tag already exists
 
 permissions:
   contents: write
@@ -25,7 +26,7 @@ jobs:
 
   publish:
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    if: ${{ needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -37,6 +38,9 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
+      # Trusted publishing (OIDC) requires npm >= 11.5.1; Node 22 ships npm 10.x,
+      # which silently 404s on publish. Upgrade before publishing.
+      - run: npm install -g npm@latest
       - run: npm ci
       - run: npm run build
       # Trusted publishing: no NPM_TOKEN. --provenance passed defensively
