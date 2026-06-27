@@ -43,10 +43,14 @@ npm install reinsjs
 
 Zero runtime dependencies. ESM + CJS + types. Node ≥ 18, Bun, Deno, browsers.
 
-## The whole API (five exports)
+## The API
 
 ```ts
-import { withScope, sleep, withTimeout, CancellationError, TimeoutError, isCancellation } from "reinsjs";
+import {
+  withScope, createScope,           // scopes
+  sleep, withTimeout, retry,        // helpers
+  CancellationError, TimeoutError, isCancellation, // errors
+} from "reinsjs";
 ```
 
 ### `withScope(body, options?)`
@@ -59,6 +63,8 @@ interface Scope {
   readonly signal: AbortSignal;
   /** Start a child task bound to this scope. Returns a promise for its result. */
   spawn<T>(task: (signal: AbortSignal) => Promise<T> | T): Promise<T>;
+  /** Spawn several at once and await all results, in order. */
+  spawnAll<T>(tasks: Iterable<(signal: AbortSignal) => Promise<T> | T>): Promise<T[]>;
   /** Cancel the whole scope (and all children) now. */
   cancel(reason?: unknown): void;
 }
@@ -67,6 +73,39 @@ interface WithScopeOptions {
   signal?: AbortSignal;   // external cancellation — when this aborts, the scope cancels
   timeout?: number;       // ms — cancel the whole scope after this long
   name?: string;          // label for debugging / error messages
+  concurrency?: number;   // max tasks running at once; extra spawns queue
+}
+```
+
+**Bounded fan-out** — cap how many run at once without losing the scope guarantees:
+
+```ts
+// Crawl 1000 URLs, 8 at a time; if any fails, the rest are cancelled.
+const pages = await withScope(
+  (scope) => scope.spawnAll(urls.map((u) => (signal) => fetch(u, { signal }))),
+  { concurrency: 8 },
+);
+```
+
+### `createScope(options?)` — `await using`
+
+A scope you manage yourself, for [explicit resource management](https://github.com/tc39/proposal-explicit-resource-management). Spawn into it; when the block exits, it cancels unfinished children, waits for them to unwind, and re-throws the first real failure.
+
+```ts
+await using scope = createScope({ timeout: 5000 });
+const user = scope.spawn((s) => fetch(`/u/${id}`, { signal: s }));
+const data = await user;
+// ← block end: scope tears down. Nothing leaks, even on throw.
+```
+
+On runtimes without `await using` (Node < 24 with no polyfill), use the explicit form — same guarantees:
+
+```ts
+const scope = createScope();
+try {
+  await scope.spawn(work);
+} finally {
+  await scope.dispose();
 }
 ```
 
@@ -86,6 +125,23 @@ Sugar for one task with a deadline.
 
 ```ts
 const data = await withTimeout((signal) => fetch(url, { signal }), 1000);
+```
+
+### `retry(task, options?)`
+
+Run a task, retrying on failure with exponential backoff. **Cancellations are never retried** (a `CancellationError`/`AbortError` or an aborted `signal` stops it immediately), and the backoff delay is cancellable — so a retry loop unwinds promptly inside a scope.
+
+```ts
+const data = await withScope((scope) =>
+  retry((s) => fetch(url, { signal: s }).then((r) => r.json()), {
+    attempts: 5,      // total tries (default 3)
+    delay: 200,       // base ms (default 100)
+    factor: 2,        // backoff multiplier (default 2)
+    maxDelay: 5000,   // cap (default ∞)
+    jitter: true,     // randomize delay (default false)
+    signal: scope.signal,
+  }),
+);
 ```
 
 ### `CancellationError` / `TimeoutError` / `isCancellation(err)`
