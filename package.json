@@ -17,6 +17,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./worker": {
+      "import": {
+        "types": "./dist/worker.d.ts",
+        "default": "./dist/worker.js"
+      },
+      "require": {
+        "types": "./dist/worker.d.cts",
+        "default": "./dist/worker.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "sideEffects": false,
@@ -32,7 +42,7 @@
     "test": "node --test --import tsx test/*.test.ts",
     "test:types": "tsd",
     "bench": "tsx bench/scope.bench.ts",
-    "lint:pkg": "publint --strict && attw --pack .",
+    "lint:pkg": "publint --strict && attw --pack . --profile node16",
     "size": "size-limit",
     "prepublishOnly": "npm run build"
   },

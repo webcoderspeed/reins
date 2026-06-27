@@ -184,6 +184,20 @@ scope.spawn(() => heavyCpuLoop());    // never yields, never checks
 
 Because of join-on-exit, an uncooperative task **delays** the scope's teardown until it finishes on its own. This is a JavaScript limitation, not a `reinsjs` bug — we surface it loudly so there are no surprises.
 
+### The escape hatch: `reinsjs/worker` (experimental)
+
+For the one case cooperative cancellation *can't* handle — a CPU-bound task that never checks the signal — there's a genuinely preemptive option: run it in a worker thread and `terminate()` it.
+
+```ts
+import { runInWorker } from "reinsjs/worker";
+
+// This loop never checks any signal. It is still killed at 500ms.
+await runInWorker((n) => { while (true) heavyCompute(n); }, 1_000_000, { timeout: 500 });
+// → rejects with TimeoutError, and the thread is actually terminated.
+```
+
+The trade-off is the worker boundary: the task runs in a fresh thread, so it **can't close over outer variables**, and its `input`/result must be structured-cloneable — pass everything it needs via `input`. Node-only for now (`node:worker_threads`); browser/Deno support is on the roadmap. This is the only way to get true preemption in JS — see [docs/cancellation-rfc.md](./docs/cancellation-rfc.md) for the full analysis and where the language could go next.
+
 ## Recipes
 
 **Cancel other requests when the first one fails** — that's the quickstart above.
