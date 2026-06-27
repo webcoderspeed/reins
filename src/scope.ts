@@ -1,4 +1,5 @@
 import { CancellationError, TimeoutError, toCancellation } from './errors.js';
+import { liftListenerCap } from './internal.js';
 
 /**
  * A scope (a.k.a. nursery) owns the async tasks started inside it. When the
@@ -59,6 +60,8 @@ export async function withScope<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const { signal } = controller;
+  // A wide fan-out of tasks forwarding this signal shouldn't warn on Node.
+  liftListenerCap(signal);
 
   // Trackers for every spawned task. Each tracker always resolves (never
   // rejects): failures are routed into `fail()` and swallowed here so the

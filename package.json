@@ -3,15 +3,21 @@
   "version": "0.1.0",
   "description": "Rein in your async. Structured concurrency and cancellation for JavaScript & TypeScript — scoped tasks, automatic cancellation, timeouts. No DSL, no generators. Just async/await.",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "sideEffects": false,
   "files": [
@@ -24,6 +30,10 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "node --test --import tsx test/*.test.ts",
+    "test:types": "tsd",
+    "bench": "tsx bench/scope.bench.ts",
+    "lint:pkg": "publint --strict && attw --pack .",
+    "size": "size-limit",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -61,10 +71,32 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.4",
+    "@size-limit/preset-small-lib": "^11.1.6",
     "@types/node": "^22.10.0",
+    "publint": "^0.3.2",
+    "size-limit": "^11.1.6",
+    "tinybench": "^3.1.0",
+    "tsd": "^0.31.2",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
+  "tsd": {
+    "directory": "test-d"
+  },
+  "size-limit": [
+    {
+      "name": "withScope (tree-shaken)",
+      "path": "dist/index.js",
+      "import": "{ withScope }",
+      "limit": "1.5 kB"
+    },
+    {
+      "name": "full ESM bundle",
+      "path": "dist/index.js",
+      "limit": "2 kB"
+    }
+  ],
   "author": "webcoderspeed"
 }
